@@ -1,0 +1,25 @@
+package kutikula;
+
+using aspel.math;
+
+K :: 8.987552e9;
+
+Vector2: type struct
+{
+    x: float64;
+    y: float64;
+}
+
+add: (a: Vector2, b: float64) -> Vector2 { return { Vector2: a.x + b, a.y + b }; }
+add: (a: Vector2, b: Vector2) -> Vector2 { return { Vector2: a.x + b.x, a.y + b.y }; }
+sub: (a: Vector2, b: float64) -> Vector2 { return { Vector2: a.x - b, a.y - b }; }
+sub: (a: Vector2, b: Vector2) -> Vector2 { return { Vector2: a.x - b.x, a.y - b.y }; }
+mul: (a: Vector2, b: float64) -> Vector2 { return { Vector2: a.x * b, a.y * b }; }
+mul: (a: Vector2, b: Vector2) -> Vector2 { return { Vector2: a.x * b.x, a.y * b.y }; }
+div: (a: Vector2, b: float64) -> Vector2 { return { Vector2: a.x / b, a.y / b }; }
+div: (a: Vector2, b: Vector2) -> Vector2 { return { Vector2: a.x / b.x, a.y / b.y }; }
+neg: (a: Vector2) -> Vector2 { return { Vector2: -a.x, -a.y }; }
+length_squared: (a: Vector2) -> float64 { return a.x * a.x + a.y * a.y; }
+length: (a: Vector2) -> float64 { return sqrt(a.x * a.x + a.y * a.y); }
+normalize_or_return: (a: Vector2) -> Vector2 { l := length(a); if l == 0 then return a; return div(a, l); }
+dot: (a: Vector2, b: Vector2) -> float64 { return a.x * b.x + a.y * b.y; }

@@ -1,0 +1,53 @@
+package kutikula;
+
+using aspel.text;
+
+PIXELS_TO_METERS :: 1.0 / 100.0;
+METERS_TO_PIXELS :: 100.0;
+
+points: []Vector2 = null;
+
+FIELD_DENSITY :: 10;
+field_width := 0;
+field_height := 0;
+field: []Vector2;
+
+init_logic: ()
+{
+    field_width = WINDOW_WIDTH / FIELD_DENSITY;
+    field_height = WINDOW_HEIGHT / FIELD_DENSITY;
+    field = new[field_width * field_height] Vector2;
+}
+
+update: ()
+{
+    foreach index range 0, field.n - 1
+    {
+        x := index % field_width;
+        y := index / field_width;
+        where := { Vector2: x, y };
+        where = mul(where, FIELD_DENSITY * PIXELS_TO_METERS);
+
+        vector := { Vector2: 0, 0 };
+        foreach point in points
+        {
+            delta := sub(where, point);
+            radius := length(delta);
+            normal := normalize_or_return(delta);
+
+            // @CompilerBug ???
+            // Doesn't work for:
+            // q :: 1e-7; // q == 0
+            q: float64 = 1.0;
+            q /= 1000;
+            q /= 1000;
+            q /= 1000;
+            q /= 1000;
+            force := K * q / (radius * radius);
+            result := mul(normal, force);
+            vector = add(vector, result);
+        }
+
+        field[index] = vector;
+    }
+}

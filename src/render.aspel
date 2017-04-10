@@ -1,0 +1,91 @@
+package kutikula;
+
+using aspel.cml.event;
+using aspel.cml.video;
+using aspel.text;
+
+WINDOW_TITLE    :: "Kutikula\0"; // @Ugly - manually null-terminated
+
+WINDOW_WIDTH    :: 500;
+WINDOW_HEIGHT   :: 500;
+
+window_should_close := false;
+
+the_window:     Window;
+the_renderer:   Renderer;
+
+open_video_system: ()
+{
+    window_flags := 0; // @Reconsider - WINDOW_OPENGL
+    the_window = create_window(0);
+    the_renderer = create_renderer(the_window);
+
+    set_window_size        (the_window, WINDOW_WIDTH, WINDOW_HEIGHT);
+    set_window_maximum_size(the_window, WINDOW_WIDTH, WINDOW_HEIGHT);
+    set_window_minimum_size(the_window, WINDOW_WIDTH, WINDOW_HEIGHT);
+    set_window_fullscreen  (the_window, WINDOW_WINDOWED);
+    set_window_position    (the_window, WINDOW_POSITION_CENTERED, WINDOW_POSITION_CENTERED);
+    set_window_title       (the_window, WINDOW_TITLE);
+
+    show_window(the_window);
+}
+
+close_video_system: ()
+{
+    delete_renderer(the_renderer);
+    delete_window(the_window);
+}
+
+handle_events: ()
+{
+    event: Event;
+    while poll_event(&event)
+    {
+        switch event.event_type
+        {
+        case EVENT_QUIT then
+            window_should_close = true;
+        case EVENT_MOUSE_BUTTON_DOWN
+        {
+            mouse_event := cast(*Mouse_Button_Event) &event;
+            if mouse_event.button == MOUSE_BUTTON_LEFT then
+                handle_mouse_press(mouse_event.x, WINDOW_HEIGHT - mouse_event.y);
+        }
+        }
+    }
+}
+
+handle_mouse_press: (x: int32, y: int32)
+{
+    new_point: Vector2;
+    new_point.x = cast(float32) x * PIXELS_TO_METERS;
+    new_point.y = cast(float32) y * PIXELS_TO_METERS;
+
+    append(&points, &new_point, sizeof(type Vector2));
+}
+
+render: ()
+{
+    render_set_color(the_renderer, 36, 147, 68, 255);
+    render_clear(the_renderer);
+
+    render_set_color(the_renderer, 255, 128, 0, 255);
+    foreach vector, index in field
+    {
+        x := (index % field_width) * FIELD_DENSITY;
+        y := (index / field_width) * FIELD_DENSITY;
+        dx := cast(int32)(vector.x * METERS_TO_PIXELS + 0.5);
+        dy := cast(int32)(vector.y * METERS_TO_PIXELS + 0.5);
+        render_draw_line(the_renderer, x, WINDOW_HEIGHT - y, x + dx, WINDOW_HEIGHT - (y + dy));
+    }
+
+    render_set_color(the_renderer, 255, 255, 255, 255);
+    foreach point in points
+    {
+        x :=                 cast(int32)(point.x * METERS_TO_PIXELS);
+        y := WINDOW_HEIGHT - cast(int32)(point.y * METERS_TO_PIXELS);
+        render_fill_rect(the_renderer, x - 4, y - 4, 9, 9);
+    }
+
+    render_swap_window(the_renderer);
+}

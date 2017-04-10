@@ -1,0 +1,38 @@
+package kutikula;
+
+using aspel.io;
+using aspel.text;
+
+// @Consider - Most of these are here just because they aren't in ASL yet, or because Aspel doesn't
+// have some feature yet, or something like that... Ideally, this file wouldn't exist.
+
+append: (array_: *void, value: *void, size: uint64) // @TypeSafety
+{
+    Array: type struct
+    {
+        a:     *uint8;
+        n:      uint64;
+    }
+
+    array := cast(*Array) array_;
+    if (array.n & (array.n - 1)) == 0 // is power of 2, or 0
+    {
+        new_n := array.n * 2;
+        if new_n == 0 then
+            new_n = 8; // initial size
+
+        new_a := new[size * new_n] uint8;
+        assert(new_a != null, "@OutOfMemory"); // @OutOfMemory
+
+        if array.a != null
+        {
+            copy(array.a, new_a, array.n * size);
+            delete array.a;
+        }
+
+        array.a = new_a;
+    }
+
+    copy(value, array.a + (array.n * size), size);
+    array.n += 1;
+}

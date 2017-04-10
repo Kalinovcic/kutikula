@@ -1,39 +1,19 @@
 package kutikula;
 
-using aspel.cml.event;
-using aspel.cml.video;
-using aspel.thread;
-
-WINDOW_TITLE    :: "Kutikula\0"; // @Ugly - manually null-terminated
-
-WINDOW_WIDTH    :: 500;
-WINDOW_HEIGHT   :: 500;
-
-the_window: Window;
-window_should_close := false;
+import "math.aspel";
+import "util.aspel";
+import "render.aspel";
+import "logic.aspel";
 
 main: (args: [][]uint8)
 {
-    window_flags := 0; // @Reconsider - WINDOW_OPENGL
-    the_window = create_window(0);
-    defer delete_window(the_window);
-
-    set_window_size        (the_window, WINDOW_WIDTH, WINDOW_HEIGHT);
-    set_window_maximum_size(the_window, WINDOW_WIDTH, WINDOW_HEIGHT);
-    set_window_minimum_size(the_window, WINDOW_WIDTH, WINDOW_HEIGHT);
-    set_window_fullscreen  (the_window, WINDOW_WINDOWED);
-    set_window_position    (the_window, WINDOW_POSITION_CENTERED, WINDOW_POSITION_CENTERED);
-    set_window_title       (the_window, WINDOW_TITLE);
-
-    show_window(the_window);
-
+    init_logic();
+    open_video_system();
     while !window_should_close
     {
-        event: Event;
-        while poll_event(&event)
-        {
-            if event.event_type == EVENT_QUIT then
-                window_should_close = true;
-        }
+        handle_events();
+        update();
+        render();
     }
+    close_video_system();
 }
