@@ -29,6 +29,8 @@ update_logic := true;
 
 on_left_mouse_press: (x: int32, y: int32)
 {
+    if current_q == 0 then return;
+
     new_point: Pointy_Point;
     new_point.location.x = cast(float32) x * PIXELS_TO_METERS;
     new_point.location.y = cast(float32) y * PIXELS_TO_METERS;
@@ -40,10 +42,9 @@ on_left_mouse_press: (x: int32, y: int32)
     new_point.q /= 1000;
     new_point.q /= 1000;
     new_point.q /= 1000;
-    if current_q != 0 then
-        new_point.q *= current_q;
+    new_point.q *= current_q;
 
-    count_lines := current_q * 3; // cast(int32)(lerp(4, 80, cast(float32)(log(cast(float32) current_q) / log(cast(float32) MAX_Q))) + 0.5);
+    count_lines := current_q * 4; // cast(int32)(lerp(4, 80, cast(float32)(log(cast(float32) current_q) / log(cast(float32) MAX_Q))) + 0.5);
     foreach i range 0, count_lines - 1
     {
         x := sin(cast(float32) i / cast(float32) count_lines * 2 * PI);

@@ -8,8 +8,8 @@ using aspel.text;
 
 WINDOW_TITLE    :: "Kutikula\0"; // @Ugly - manually null-terminated
 
-INITIAL_WINDOW_WIDTH    :: 700;
-INITIAL_WINDOW_HEIGHT   :: 700;
+INITIAL_WINDOW_WIDTH    :: 900;
+INITIAL_WINDOW_HEIGHT   :: 900;
 
 window_should_close := false;
 
