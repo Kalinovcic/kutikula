@@ -1,26 +1,70 @@
 package kutikula;
 
+using aspel.math;
 using aspel.text;
 
 PIXELS_TO_METERS :: 1.0 / 100.0;
 METERS_TO_PIXELS :: 100.0;
 
-points: []Vector2 = null;
+MAX_Q :: 50;
 
-FIELD_DENSITY :: 4;
+current_q: int32 = 1;
+
+Pointy_Point: type struct
+{
+    location: Vector2;
+    q: float32;
+}
+
+points: []Pointy_Point = null;
+line_begin_points: []Vector2 = null;
+lines: [][]Vector2 = null;
+
+FIELD_DENSITY :: 1;
 field_width := 0;
 field_height := 0;
 field: []Vector2;
 
 update_logic := true;
 
-on_mouse_press: (x: int32, y: int32)
+on_left_mouse_press: (x: int32, y: int32)
+{
+    new_point: Pointy_Point;
+    new_point.location.x = cast(float32) x * PIXELS_TO_METERS;
+    new_point.location.y = cast(float32) y * PIXELS_TO_METERS;
+
+    // @CompilerBug ???
+    // Doesn't work for:
+    // q :: 1e-7; // q == 0
+    new_point.q = 1.0;
+    new_point.q /= 1000;
+    new_point.q /= 1000;
+    new_point.q /= 1000;
+    if current_q != 0 then
+        new_point.q *= current_q;
+
+    count_lines := current_q * 3; // cast(int32)(lerp(4, 80, cast(float32)(log(cast(float32) current_q) / log(cast(float32) MAX_Q))) + 0.5);
+    foreach i range 0, count_lines - 1
+    {
+        x := sin(cast(float32) i / cast(float32) count_lines * 2 * PI);
+        y := cos(cast(float32) i / cast(float32) count_lines * 2 * PI);
+
+        new_point2: Vector2;
+        new_point2.x = new_point.location.x + cast(float32)(x * PIXELS_TO_METERS * 12);
+        new_point2.y = new_point.location.y + cast(float32)(y * PIXELS_TO_METERS * 12);
+        append(&line_begin_points, &new_point2, sizeof(type Vector2));
+    }
+
+    append(&points, &new_point, sizeof(type Pointy_Point));
+    update_logic = true;
+}
+
+on_right_mouse_press: (x: int32, y: int32)
 {
     new_point: Vector2;
     new_point.x = cast(float32) x * PIXELS_TO_METERS;
     new_point.y = cast(float32) y * PIXELS_TO_METERS;
-
-    append(&points, &new_point, sizeof(type Vector2));
+    append(&line_begin_points, &new_point, sizeof(type Vector2));
     update_logic = true;
 }
 
@@ -29,8 +73,14 @@ update: ()
     if !update_logic then return;
     update_logic = false;
 
-    if field != null then
-        delete field;
+    if field != null then delete field;
+    if lines != null
+    {
+        foreach line in lines then
+            delete line;
+        delete lines;
+        lines = null;
+    }
 
     field_width = window_width / FIELD_DENSITY;
     field_height = window_height / FIELD_DENSITY;
@@ -46,23 +96,39 @@ update: ()
         vector := { Vector2: 0, 0 };
         foreach point in points
         {
-            delta := sub(where, point);
+            delta := sub(where, point.location);
             radius := length(delta);
             normal := normalize_or_return(delta);
 
-            // @CompilerBug ???
-            // Doesn't work for:
-            // q :: 1e-7; // q == 0
-            q: float64 = 1.0;
-            q /= 1000;
-            q /= 1000;
-            q /= 1000;
-            q /= 1000;
-            force := K * q / (radius * radius);
+            force := K * point.q / (radius * radius);
             result := mul(normal, force);
             vector = add(vector, result);
         }
 
         field[index] = vector;
+    }
+
+    foreach point in line_begin_points
+    {
+        new_line: []Vector2 = null;
+        append(&new_line, &point, sizeof(type Vector2));
+
+        iteration := 0;
+        while iteration < 500
+        {
+            iteration += 1;
+            last := new_line[new_line.n - 1];
+            x := cast(int32)(last.x * METERS_TO_PIXELS / FIELD_DENSITY + 0.5);
+            y := cast(int32)(last.y * METERS_TO_PIXELS / FIELD_DENSITY + 0.5);
+            if x < 0 || x >= field_width ||
+               y < 0 || y >= field_height then
+                break;
+            index := y * field_width + x;
+            vector := mul(normalize_or_return(field[index]), FIELD_DENSITY * PIXELS_TO_METERS);
+            next := add(last, vector);
+            append(&new_line, &next, sizeof(type Vector2));
+        }
+
+        append(&lines, &new_line, sizeof(type []Vector2));
     }
 }

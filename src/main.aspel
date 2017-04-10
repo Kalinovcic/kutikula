@@ -5,8 +5,39 @@ import "util.aspel";
 import "render.aspel";
 import "logic.aspel";
 
+using aspel.cml.video.font;
+using aspel.cml.video.image;
+using aspel.io;
+using aspel.log;
+using aspel.math;
+using aspel.text;
+
+FONT_SIZE :: 50.0;
+
+the_font: *Font;
+
 main: (args: [][]uint8)
 {
+    font_bytes := read_all_bytes_from_file("segoeui.ttf");
+    the_font = create_font(font_bytes, 0);
+    if the_font == null then
+        report(ERROR, "Couldn't load the font");
+    defer discard destroy_font(the_font);
+
+    atlas: Glyph_Atlas;
+    atlas.width  = 1024;
+    atlas.height = 1024;
+    atlas.stride = atlas.width;
+    atlas.pixels = new[atlas.width * atlas.height] uint8;
+    assert(begin_glyph_atlas(the_font, atlas, 5));
+    {
+        low  := 0x20;
+        high := 0xE7;
+        count := high - low + 1;
+        assert(pack_glyph_range(the_font, FONT_SIZE, low, count) == count);
+    }
+    assert(end_glyph_atlas(the_font));
+
     open_video_system();
     while !window_should_close
     {

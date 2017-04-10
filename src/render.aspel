@@ -2,12 +2,14 @@ package kutikula;
 
 using aspel.cml.event;
 using aspel.cml.video;
+using aspel.cml.video.font;
+using aspel.math;
 using aspel.text;
 
 WINDOW_TITLE    :: "Kutikula\0"; // @Ugly - manually null-terminated
 
-INITIAL_WINDOW_WIDTH    :: 800;
-INITIAL_WINDOW_HEIGHT   :: 800;
+INITIAL_WINDOW_WIDTH    :: 700;
+INITIAL_WINDOW_HEIGHT   :: 700;
 
 window_should_close := false;
 
@@ -52,8 +54,67 @@ handle_events: ()
         {
             mouse_event := cast(*Mouse_Button_Event) &event;
             if mouse_event.button == MOUSE_BUTTON_LEFT then
-                on_mouse_press(mouse_event.x, window_height - mouse_event.y);
+                on_left_mouse_press(mouse_event.x, window_height - mouse_event.y);
+            /*else if mouse_event.button == MOUSE_BUTTON_RIGHT then
+                on_right_mouse_press(mouse_event.x, window_height - mouse_event.y);*/
         }
+        case EVENT_KEY_DOWN
+        {
+            DIGIT_CODES := { []Scancode: SCANCODE_0, SCANCODE_1, SCANCODE_2, SCANCODE_3, SCANCODE_4,
+                                         SCANCODE_5, SCANCODE_6, SCANCODE_7, SCANCODE_8, SCANCODE_9 };
+            keyboard_event := cast(*Keyboard_Event) &event;
+            scancode := keyboard_event.key.scancode;
+            if scancode == SCANCODE_SPACE
+            {
+                points = null;
+                line_begin_points = null;
+                update_logic = true;
+            }
+            else if scancode == SCANCODE_BACKSPACE
+            {
+                current_q /= 10;
+            }
+            else
+            {
+                digit: int32 = 0;
+                while (digit < DIGIT_CODES.n) && (DIGIT_CODES[digit] != scancode) then
+                    digit += 1;
+
+                if digit < 10
+                {
+                    current_q *= 10;
+                    current_q += digit;
+
+                    if current_q > MAX_Q then
+                        current_q = MAX_Q;
+                }
+            }
+        }
+        }
+    }
+}
+
+render_string: (string: []uint8, begin_x: int32, begin_y: int32)
+{
+    current_x := cast(float32) begin_x;
+    current_y := cast(float32) begin_y;
+    foreach c in string
+    {
+        index := get_glyph_index(the_font, c);
+        glyph: Glyph;
+        assert(next_qlyph(the_font, index, FONT_SIZE, &current_x, &current_y, true, &glyph));
+
+        render_set_color(the_renderer, 255, 255, 255, 255);
+        foreach x range glyph.x0, glyph.x1
+        {
+            s := cast(int32) lerp(cast(float32) glyph.s0, cast(float32) glyph.s1, (x - glyph.x0)/(glyph.x1 - glyph.x0 + 1));
+            foreach y range glyph.y0, glyph.y1
+            {
+                t := cast(int32) lerp(cast(float32) glyph.t0, cast(float32) glyph.t1, (y - glyph.y0)/(glyph.y1 - glyph.y0 + 1));
+                pixel := glyph.atlas.pixels[t * glyph.atlas.width + s];
+                if pixel < 150 then continue;
+                render_draw_point(the_renderer, cast(int32) x, cast(int32) y);
+            }
         }
     }
 }
@@ -63,6 +124,7 @@ render: ()
     render_set_color(the_renderer, 36, 147, 68, 255);
     render_clear(the_renderer);
 
+    /*
     render_set_color(the_renderer, 255, 128, 0, 255);
     foreach vector, index in field
     {
@@ -72,14 +134,33 @@ render: ()
         dy := cast(int32)(vector.y * METERS_TO_PIXELS + 0.5);
         render_draw_line(the_renderer, x, window_height - y, x + dx, window_height - (y + dy));
     }
+    */
+
+    render_set_color(the_renderer, 0, 80, 255, 255);
+    foreach line in lines
+    {
+        points := new[line.n] Point;
+        defer delete points;
+        foreach point, index in line then
+            points[index] = { Point:                 cast(int32)(point.x * METERS_TO_PIXELS + 0.5),
+                                     window_height - cast(int32)(point.y * METERS_TO_PIXELS + 0.5) };
+        render_draw_lines(the_renderer, points);
+    }
 
     render_set_color(the_renderer, 255, 255, 255, 255);
     foreach point in points
     {
-        x :=                 cast(int32)(point.x * METERS_TO_PIXELS);
-        y := window_height - cast(int32)(point.y * METERS_TO_PIXELS);
-        render_fill_rect(the_renderer, x - 4, y - 4, 9, 9);
+        x :=                 cast(int32)(point.location.x * METERS_TO_PIXELS);
+        y := window_height - cast(int32)(point.location.y * METERS_TO_PIXELS);
+        radius := cast(int32)((log(point.q) / log(10))*3 + 40);
+        render_fill_rect(the_renderer, x - radius / 2, y - radius / 2, radius, radius);
     }
+
+
+    q_text_buffer := push[64] uint8;
+    current_q_text := integer_to_string(q_text_buffer, current_q, 10);
+    q_text := concatenate("q: ", current_q_text, " nC");
+    render_string(q_text, 30, window_height - 30);
 
     render_swap_window(the_renderer);
 }
