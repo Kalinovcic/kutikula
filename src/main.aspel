@@ -7,7 +7,6 @@ import "logic.aspel";
 
 main: (args: [][]uint8)
 {
-    init_logic();
     open_video_system();
     while !window_should_close
     {

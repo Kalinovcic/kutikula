@@ -7,20 +7,35 @@ METERS_TO_PIXELS :: 100.0;
 
 points: []Vector2 = null;
 
-FIELD_DENSITY :: 10;
+FIELD_DENSITY :: 4;
 field_width := 0;
 field_height := 0;
 field: []Vector2;
 
-init_logic: ()
+update_logic := true;
+
+on_mouse_press: (x: int32, y: int32)
 {
-    field_width = WINDOW_WIDTH / FIELD_DENSITY;
-    field_height = WINDOW_HEIGHT / FIELD_DENSITY;
-    field = new[field_width * field_height] Vector2;
+    new_point: Vector2;
+    new_point.x = cast(float32) x * PIXELS_TO_METERS;
+    new_point.y = cast(float32) y * PIXELS_TO_METERS;
+
+    append(&points, &new_point, sizeof(type Vector2));
+    update_logic = true;
 }
 
 update: ()
 {
+    if !update_logic then return;
+    update_logic = false;
+
+    if field != null then
+        delete field;
+
+    field_width = window_width / FIELD_DENSITY;
+    field_height = window_height / FIELD_DENSITY;
+    field = new[field_width * field_height] Vector2;
+
     foreach index range 0, field.n - 1
     {
         x := index % field_width;
