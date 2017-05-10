@@ -20,7 +20,10 @@ void add_thing(Thing thing)
         for (auto& line : thing.lines)
             line.points.resize(1);
 
-    int line_count = 20;
+    int line_count = (int) ceil(fabs(thing.q * 8.0));
+    if (line_count < 8) line_count = 8;
+    if (line_count > 40) line_count = 40;
+
     vec3 points[line_count];
     distribute(points, line_count);
     for (int i = 0; i < line_count; i++)

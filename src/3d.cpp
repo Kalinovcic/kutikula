@@ -1,5 +1,5 @@
 
-inline void Normalize3(GLdouble* v)
+inline void normalize3(GLdouble* v)
 {
     GLdouble len = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
     v[0] /= len;
@@ -14,9 +14,9 @@ void sphere_face(int p_recurse, double radius, GLdouble *a, GLdouble *b, GLdoubl
         GLdouble d[3] = {a[0] + b[0], a[1] + b[1], a[2] + b[2]};
         GLdouble e[3] = {b[0] + c[0], b[1] + c[1], b[2] + c[2]};
         GLdouble f[3] = {c[0] + a[0], c[1] + a[1], c[2] + a[2]};
-        Normalize3(d);
-        Normalize3(e);
-        Normalize3(f);
+        normalize3(d);
+        normalize3(e);
+        normalize3(f);
         sphere_face(p_recurse - 1, radius, a, d, f, wireframe);
         sphere_face(p_recurse - 1, radius, d, b, e, wireframe);
         sphere_face(p_recurse - 1, radius, f, e, c, wireframe);

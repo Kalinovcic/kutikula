@@ -310,6 +310,13 @@ void render_gui()
         thing.q = next_q;
         add_thing(thing);
     }
+    SameLine();
+    if (Button("Obrisi sve")) things.clear();
+    if (things.size())
+    {
+        SameLine();
+        if (Button("Undo")) things.pop_back();
+    }
     Checkbox("Mreza", &show_grid);
     End();
 
