@@ -296,15 +296,20 @@ void render_gui()
     }
 
     bool open = true;
-    auto size = ImVec2(300, 280);
+    auto size = ImVec2(300, 300);
     SetNextWindowSize(size, ImGuiSetCond_Always);
     Begin("Control", &open, ImGuiWindowFlags_NoResize);
     Combo("Object", &current_object, OBJECT_NAMES, 2);
+    Spacing();
+    Separator();
+    Spacing();
     InputInt("##x", &next_x); SameLine(); TextColored({ 1.0, 0.4, 0.4, 1 }, "x");
     InputInt("##y", &next_y); SameLine(); TextColored({ 0.4, 1.0, 0.4, 1 }, "y");
     InputInt("##z", &next_z); SameLine(); TextColored({ 0.4, 0.4, 1.0, 1 }, "z");
     if (current_object == OBJECT_BOX)
     {
+        Spacing();
+        Spacing();
         InputInt("##w", &next_w); SameLine(); TextColored({ 1.0, 0.4, 0.4, 1 }, "w");
         InputInt("##h", &next_h); SameLine(); TextColored({ 0.4, 1.0, 0.4, 1 }, "h");
         InputInt("##d", &next_d); SameLine(); TextColored({ 0.4, 0.4, 1.0, 1 }, "d");
@@ -312,7 +317,13 @@ void render_gui()
         if (next_h < 1) next_h = 1;
         if (next_d < 1) next_d = 1;
     }
+    Spacing();
+    Spacing();
     InputFloat("Q", &next_q);
+
+    Spacing();
+    Separator();
+    Spacing();
     if (Button("Place"))
     {
         Object object;
