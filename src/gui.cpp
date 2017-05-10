@@ -295,29 +295,41 @@ void render_gui()
         camera_zoom += (camera_target_zoom - camera_zoom) * io.DeltaTime * 10;
     }
 
-    auto size = ImVec2(200,180);
-    SetNextWindowSize(size, ImGuiSetCond_FirstUseEver);
-    SetNextWindowSizeConstraints(size, size);
-    Begin("Control");
+    bool open = true;
+    auto size = ImVec2(300, 280);
+    SetNextWindowSize(size, ImGuiSetCond_Always);
+    Begin("Control", &open, ImGuiWindowFlags_NoResize);
+    Combo("Object", &current_object, OBJECT_NAMES, 2);
     InputInt("##x", &next_x); SameLine(); TextColored({ 1.0, 0.4, 0.4, 1 }, "x");
     InputInt("##y", &next_y); SameLine(); TextColored({ 0.4, 1.0, 0.4, 1 }, "y");
     InputInt("##z", &next_z); SameLine(); TextColored({ 0.4, 0.4, 1.0, 1 }, "z");
-    InputFloat("Q", &next_q);
-    if (Button("Dodaj"))
+    if (current_object == OBJECT_BOX)
     {
-        Thing thing;
-        thing.p = { (float) next_x, (float) next_y, (float) next_z };
-        thing.q = next_q;
-        add_thing(thing);
+        InputInt("##w", &next_w); SameLine(); TextColored({ 1.0, 0.4, 0.4, 1 }, "w");
+        InputInt("##h", &next_h); SameLine(); TextColored({ 0.4, 1.0, 0.4, 1 }, "h");
+        InputInt("##d", &next_d); SameLine(); TextColored({ 0.4, 0.4, 1.0, 1 }, "d");
+        if (next_w < 1) next_w = 1;
+        if (next_h < 1) next_h = 1;
+        if (next_d < 1) next_d = 1;
+    }
+    InputFloat("Q", &next_q);
+    if (Button("Place"))
+    {
+        Object object;
+        object.kind = current_object;
+        object.p = { (float) next_x, (float) next_y, (float) next_z };
+        object.s = { (float) next_w, (float) next_h, (float) next_d };
+        object.q = next_q;
+        add_object(object);
     }
     SameLine();
-    if (Button("Obrisi sve")) things.clear();
-    if (things.size())
+    if (Button("Clear")) objects.clear();
+    if (objects.size())
     {
         SameLine();
-        if (Button("Undo")) things.pop_back();
+        if (Button("Undo")) objects.pop_back();
     }
-    Checkbox("Mreza", &show_grid);
+    Checkbox("Show grid", &show_grid);
     End();
 
     Render();

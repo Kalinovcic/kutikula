@@ -14,13 +14,47 @@ void distribute(vec3* points, int count)
     }
 }
 
-void add_thing(Thing thing)
+void add_object(Object object)
 {
-    for (auto& thing : things)
-        for (auto& line : thing.lines)
+    if (object.kind == OBJECT_POINT)
+    {
+        object.s = { 0, 0, 0 };
+
+        Thing thing;
+        thing.p = object.p;
+        thing.q = object.q;
+        object.things.push_back(thing);
+    }
+    else
+    {
+        int div = 3;
+        int cx = (int)(object.s.x + 0.5) * div;
+        int cy = (int)(object.s.y + 0.5) * div;
+        int cz = (int)(object.s.z + 0.5) * div;
+        Thing thing;
+        thing.q = object.q / (float)(cx * cy * cz);
+        for (int x = 0; x < cx; x++)
+        {
+            float ox = (x + 0.5f) / (float) cx;
+            for (int y = 0; y < cy; y++)
+            {
+                float oy = (y + 0.5f) / (float) cy;
+                for (int z = 0; z < cz; z++)
+                {
+                    float oz = (z + 0.5f) / (float) cz;
+                    vec3 o = { ox, oy, oz };
+                    thing.p = object.p + o * object.s;
+                    object.things.push_back(thing);
+                }
+            }
+        }
+    }
+
+    for (auto& object : objects)
+        for (auto& line : object.lines)
             line.points.resize(1);
 
-    int line_count = (int) ceil(fabs(thing.q * 8.0));
+    int line_count = (int) ceil(fabs(object.q * 8.0));
     if (line_count < 8) line_count = 8;
     if (line_count > 40) line_count = 40;
 
@@ -28,12 +62,24 @@ void add_thing(Thing thing)
     distribute(points, line_count);
     for (int i = 0; i < line_count; i++)
     {
+        if (object.kind == OBJECT_BOX)
+        {
+            float len = length(object.s / 2.0f);
+            points[i] *= len;
+            if (fabs(points[i].x) > object.s.x / 2.0) points[i] *= fabs(object.s.x / 2.0 / points[i].x);
+            if (fabs(points[i].y) > object.s.y / 2.0) points[i] *= fabs(object.s.y / 2.0 / points[i].y);
+            if (fabs(points[i].z) > object.s.z / 2.0) points[i] *= fabs(object.s.z / 2.0 / points[i].z);
+        }
+        else
+        {
+            points[i] *= 0.1f;
+        }
         Line line;
-        line.points.push_back(thing.p + points[i] * 0.1f);
-        thing.lines.push_back(line);
+        line.points.push_back(object.p + object.s * 0.5f + points[i]);
+        object.lines.push_back(line);
     }
 
-    things.push_back(thing);
+    objects.push_back(object);
 }
 
 vec3 get_force_in_point(vec3 where)
@@ -41,49 +87,51 @@ vec3 get_force_in_point(vec3 where)
     static const double K = 8.987552e9;
 
     vec3 vector = { 0.0f, 0.0f, 0.0f };
-    for (auto& thing : things)
-    {
-        vec3 delta = where - thing.p;
-        float radius = length(delta);
-        vec3 normal = normalize(delta);
-        float force = K * thing.q / (radius * radius);
-        vector += normal * force;
-    }
+    for (auto& object : objects)
+        for (auto& thing : object.things)
+        {
+            vec3 delta = where - thing.p;
+            float radius = length(delta);
+            vec3 normal = normalize(delta);
+            float force = K * thing.q / (radius * radius);
+            vector += normal * force;
+        }
     return vector;
 }
 
 void update_physics()
 {
     static const int MAX_LINE_POINTS = 300;
-    static const float LINE_MOVE = 0.05;
+    static const float LINE_MOVE = 0.1;
 
-    for (auto& thing : things)
-    {
-        for (auto& line : thing.lines)
+    for (auto& object : objects)
+        for (auto& line : object.lines)
         {
             if (line.points.size() > MAX_LINE_POINTS) continue;
             vec3 point = *line.points.rbegin();
             vec3 force = get_force_in_point(point);
             vec3 move = normalize(force) * LINE_MOVE;
-            if (thing.q < 0) move = -move;
+            if (object.q < 0) move = -move;
             line.points.push_back(point + move);
         }
-    }
 }
 
 void render_physics()
 {
-    for (auto& thing : things)
+    for (auto& object : objects)
     {
         vec3 color = { 0.5f, 0.5f, 0.5f };
-        if (thing.q < 0) color = { 1.0f, 1.0f, 1.0f };
-        sphere(0.3, thing.p, color);
+        if (object.q < 0) color = { 1.0f, 1.0f, 1.0f };
+        if (object.kind == OBJECT_POINT)
+            sphere(0.3, object.p, color);
+        else
+            box(object.p, object.s, color);
     }
 
+    glLineWidth(2);
     glBegin(GL_LINES);
-    for (auto& thing : things)
-    {
-        for (auto& line : thing.lines)
+    for (auto& object : objects)
+        for (auto& line : object.lines)
         {
             for (int i = 1; i < line.points.size(); i++)
             {
@@ -100,6 +148,6 @@ void render_physics()
                 glVertex3f(b.x, b.y, b.z);
             }
         }
-    }
     glEnd();
+    glLineWidth(1);
 }

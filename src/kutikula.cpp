@@ -42,6 +42,7 @@ int window_width;
 int window_height;
 
 int next_x, next_y, next_z;
+int next_w = 2, next_h = 2, next_d = 2;
 float next_q = 5;
 
 float camera_angle_vertical = 0.15 * M_PI;
@@ -51,6 +52,16 @@ float camera_zoom = camera_target_zoom;
 vec3 camera_position;
 
 bool show_grid = true;
+
+int current_object = 0;
+const int OBJECT_POINT = 0;
+const int OBJECT_BOX = 1;
+
+const char* OBJECT_NAMES[] =
+{
+    "Point",
+    "Box"
+};
 
 void report(const char* error)
 {
@@ -68,12 +79,21 @@ struct Thing
 {
     vec3 p;
     float q;
+};
+
+struct Object
+{
+    int kind;
+    vec3 p;
+    vec3 s;
+    float q;
+    std::vector<Thing> things;
     std::vector<Line> lines;
 };
 
-std::vector<Thing> things;
+std::vector<Object> objects;
 
-void add_thing(Thing thing);
+void add_object(Object object);
 void update_physics();
 void render_physics();
 

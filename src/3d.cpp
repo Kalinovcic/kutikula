@@ -97,6 +97,97 @@ void sphere(double radius, vec3 position, vec3 color, bool wireframe = false, in
     }
 }
 
+void box(vec3 position, vec3 size, vec3 color, bool wireframe = false)
+{
+    glPushMatrix();
+    glTranslatef(position.x, position.y, position.z);
+    glScalef(size.x, size.y, size.z);
+
+    int n = 6 * 4;
+    vec3 vertices[] = {
+        { 0.0f, 0.0f, 0.0f },
+        { 1.0f, 0.0f, 0.0f },
+        { 1.0f, 1.0f, 0.0f },
+        { 0.0f, 1.0f, 0.0f },
+        { 0.0f, 0.0f, 1.0f },
+        { 1.0f, 0.0f, 1.0f },
+        { 1.0f, 1.0f, 1.0f },
+        { 0.0f, 1.0f, 1.0f },
+        { 0.0f, 0.0f, 0.0f },
+        { 1.0f, 0.0f, 0.0f },
+        { 1.0f, 0.0f, 1.0f },
+        { 0.0f, 0.0f, 1.0f },
+        { 0.0f, 1.0f, 0.0f },
+        { 1.0f, 1.0f, 0.0f },
+        { 1.0f, 1.0f, 1.0f },
+        { 0.0f, 1.0f, 1.0f },
+        { 0.0f, 0.0f, 0.0f },
+        { 0.0f, 1.0f, 0.0f },
+        { 0.0f, 1.0f, 1.0f },
+        { 0.0f, 0.0f, 1.0f },
+        { 1.0f, 0.0f, 0.0f },
+        { 1.0f, 1.0f, 0.0f },
+        { 1.0f, 1.0f, 1.0f },
+        { 1.0f, 0.0f, 1.0f },
+    };
+    vec3 normals[] = {
+        { 0.0f, 0.0f, -1.0f },
+        { 0.0f, 0.0f, +1.0f },
+        { 0.0f, -1.0f, 0.0f },
+        { 0.0f, +1.0f, 0.0f },
+        { -1.0f, 0.0f, 0.0f },
+        { +1.0f, 0.0f, 0.0f },
+    };
+
+    if (wireframe)
+    {
+        glColor3f(color.x, color.y, color.z);
+        glBegin(GL_LINES);
+        for (int i = 0; i < n; i += 4)
+        {
+            for (int j = 0; j < 4; j++)
+            {
+                auto a = vertices[i + j];
+                auto b = vertices[i + (j + 1) % 4];
+                glVertex3f(a.x, a.y, a.z);
+                glVertex3f(b.x, b.y, b.z);
+            }
+        }
+        glEnd();
+    }
+    else
+    {
+        glEnable(GL_LIGHTING);
+        glEnable(GL_LIGHT0);
+
+        GLfloat diffuse[] = { color.x, color.y, color.z };
+        GLfloat specular[] = { 1.0f, 1.0f, 1.0f };
+        GLfloat shininess[] = { 127 };
+
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shininess);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuse);
+
+        glBegin(GL_QUADS);
+        for (int i = 0; i < n; i += 4)
+        {
+            auto a = normals[i / 4];
+            glNormal3f(a.x, a.y, a.z);
+            for (int j = 0; j < 4; j++)
+            {
+                auto a = vertices[i + j];
+                glVertex3f(a.x, a.y, a.z);
+            }
+        }
+        glEnd();
+
+        glDisable(GL_LIGHTING);
+        glDisable(GL_LIGHT0);
+    }
+
+    glPopMatrix();
+}
+
 void render_3d_test()
 {
     GLfloat light_position[] = { 0, 0, 100, 0 };
@@ -127,7 +218,19 @@ void render_3d_test()
     gluLookAt(camera_position.x, camera_position.y, camera_position.z,   0, 0, 0,   0, 1, 0);
 
     render_physics();
-    sphere(0.25, { (float) next_x, (float) next_y, (float) next_z }, { 1.0f, 0.0f, 1.0f }, true, 2);
+
+    vec3 pos = { (float) next_x, (float) next_y, (float) next_z };
+    vec3 size = { (float) next_w, (float) next_h, (float) next_d };
+    vec3 color = { 1.0f, 0.0f, 1.0f };
+    if (current_object == OBJECT_BOX)
+    {
+        vec3 off = { 0.1f, 0.1f, 0.1f };
+        box(pos + off, size - off * 2.0f, color, true);
+    }
+    else
+    {
+        sphere(0.25, pos, color, true, 2);
+    }
 
     glColor3f(0.5, 0.5, 0.5);
     glBegin(GL_LINES);
